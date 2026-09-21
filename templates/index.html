@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Image Blurring — Spatial vs Frequency</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+</head>
+<body>
+  <header class="masthead">
+    <div class="wrap">
+      <h1>Image Blurring: <span>Spatial</span> vs <span>Frequency</span> filtering</h1>
+      <p class="sub">Convolution in space ≡ multiplication in the Fourier domain — the
+        <em>convolution theorem</em>, demonstrated live.</p>
+    </div>
+  </header>
+
+  <main class="wrap">
+
+    <!-- ============ CONTROLS ============ -->
+    <section class="card controls">
+      <div class="control">
+        <label for="kernel-type">Kernel</label>
+        <select id="kernel-type">
+          <option value="gaussian" selected>Gaussian</option>
+          <option value="box">Box (mean)</option>
+        </select>
+      </div>
+
+      <div class="control" id="sigma-control">
+        <label for="sigma">Sigma <span id="sigma-val">2.0</span></label>
+        <input type="range" id="sigma" min="0.3" max="8" step="0.1" value="2.0" />
+      </div>
+
+      <div class="control" id="ksize-control">
+        <label for="ksize">Kernel size <small>(odd; blank = auto)</small></label>
+        <input type="number" id="ksize" min="3" max="201" step="2" value="" placeholder="auto" />
+      </div>
+
+      <div class="control">
+        <label for="source">Image source</label>
+        <select id="source">
+          <option value="synthetic" selected>Synthetic test image</option>
+          <option value="upload">Upload</option>
+        </select>
+      </div>
+
+      <div class="control" id="upload-control" hidden>
+        <label for="file">File</label>
+        <input type="file" id="file" accept="image/*" />
+      </div>
+
+      <button id="run">Run filter</button>
+    </section>
+
+    <!-- ============ METRICS ============ -->
+    <section class="metrics" id="metrics">
+      <div class="metric">
+        <div class="metric-label">max |spatial − frequency|</div>
+        <div class="metric-value" id="m-max">—</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">RMSE</div>
+        <div class="metric-value" id="m-rmse">—</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">PSNR</div>
+        <div class="metric-value" id="m-psnr">—</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Verdict</div>
+        <div class="metric-value" id="m-verdict">—</div>
+      </div>
+    </section>
+
+    <!-- ============ RESULTS ============ -->
+    <section class="panels">
+      <figure class="panel">
+        <img id="img-original" alt="original" />
+        <figcaption>Original</figcaption>
+      </figure>
+      <figure class="panel">
+        <img id="img-spatial" alt="spatial blur" />
+        <figcaption>Spatial blur — <code>g = f ∗ h</code></figcaption>
+      </figure>
+      <figure class="panel">
+        <img id="img-frequency" alt="frequency blur" />
+        <figcaption>Frequency blur — <code>g = IDFT(F · H)</code></figcaption>
+      </figure>
+      <figure class="panel">
+        <img id="img-diff" alt="difference" />
+        <figcaption id="cap-diff">|difference|</figcaption>
+      </figure>
+    </section>
+
+    <section class="panels freq">
+      <figure class="panel">
+        <img id="spec-image" alt="image spectrum" />
+        <figcaption>log |F(u,v)| — image spectrum</figcaption>
+      </figure>
+      <figure class="panel">
+        <img id="spec-filter" alt="filter transfer function" />
+        <figcaption>log |H(u,v)| — filter (low-pass)</figcaption>
+      </figure>
+      <figure class="panel">
+        <img id="spec-result" alt="product spectrum" />
+        <figcaption>log |F·H| — product</figcaption>
+      </figure>
+      <figure class="panel">
+        <img id="img-kernel" alt="kernel" />
+        <figcaption id="cap-kernel">Kernel (spatial filter h)</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============ HOW IT WORKS ============ -->
+    <section class="card how">
+      <h2>Why the two panels match</h2>
+      <p>
+        A blur is a linear, shift-invariant operation described by a kernel <em>h</em>.
+        The <strong>convolution theorem</strong> says its Fourier transform
+        <em>H</em> is the filter's transfer function, and that convolving with
+        <em>h</em> is identical to multiplying by <em>H</em>:
+      </p>
+      <p class="formula">𝒢 = ℱ{f ∗ h} = ℱ{f} · ℱ{h} = F · H</p>
+      <p>
+        So <em>“smooth each pixel with a weighted average of its neighbours”</em>
+        (spatial) and <em>“scale every frequency by H(u,v) and invert”</em>
+        (frequency) are the same operation. This page runs <strong>both</strong>
+        and measures the difference: it lands at ~10<sup>−12</sup>, i.e. floating-point
+        round-off, so the verdict reads <em>identical</em>. See
+        <code>theory.md</code> for the full derivation and
+        <code>experiment.py</code> for the reproducible validation.
+      </p>
+    </section>
+  </main>
+
+  <footer class="wrap">
+    <p>GSU Computer Vision — Module 3 · Image blurring with spatial &amp; frequency-domain filtering.</p>
+  </footer>
+
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,8 @@
+services:
+  blur:
+    build: .
+    image: gsu-cv-module3-blur:latest
+    container_name: blur-demo
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
