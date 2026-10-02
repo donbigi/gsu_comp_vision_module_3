@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gsu-cv-module3
+  namespace: computer-vision
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gsu-cv-module3
+  template:
+    metadata:
+      labels:
+        app: gsu-cv-module3
+    spec:
+      containers:
+        - name: gsu-cv-module3
+          image: docker.io/donbigi/gsu_comp_vision_module_3:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8000
+              name: http
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gsu-cv-module3
+  namespace: computer-vision
+spec:
+  selector:
+    app: gsu-cv-module3
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8000
+      protocol: TCP
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: module3-ui
+  namespace: istio-ingress
+spec:
+  hosts:
+    - "module3.ucosibe.xyz"
+  gateways:
+    - module3-gateway
+  http:
+    - match:
+        - uri:
+            prefix: /
+      route:
+        - destination:
+            host: gsu-cv-module3.computer-vision.svc.cluster.local
+            port:
+              number: 80
+---
+apiVersion: networking.istio.io/v1beta1
+kind: Gateway
+metadata:
+  name: module3-gateway
+  namespace: istio-ingress
+spec:
+  selector:
+    istio: gateway
+  servers:
+    - port:
+        number: 80
+        name: http
+        protocol: HTTP
+      hosts:
+        - "module3.ucosibe.xyz"
